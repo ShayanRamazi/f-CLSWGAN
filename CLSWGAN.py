@@ -85,7 +85,7 @@ class CLSWGANGP():
 
         self.generator_model = Model([z_gen, label],[valid,classx])
         plot_model(self.generator_model,to_file="./models/model.pdf",show_shapes=True)
-        self.generator_model.compile(loss=[wasserstein_loss,'sparse_categorical_crossentropy'],optimizer=optimizer,loss_weights=[1, 1])
+        self.generator_model.compile(loss=[wasserstein_loss,'categorical_crossentropy'],optimizer=optimizer,loss_weights=[1, 1])
 
     def train(self, epochs, batch_size, sample_interval=50):
         (x_train, y_train, a_train), (x_test, y_test, a_test), (x_val, y_val, a_val) = readH5file()
@@ -112,11 +112,13 @@ class CLSWGANGP():
             # ---------------------
             idx = np.random.randint(0, x_train.shape[0], batch_size)
             features, labels, attr = x_train[idx], y_train[idx],a_train[idx]
+            import keras
+            labels = keras.utils.to_categorical(labels, 50)
             g_loss = self.generator_model.train_on_batch([noise, attr],[valid,labels])
 
             # Plot the progress
-            print("%d [D loss: %f] [G loss: %f]" % (epoch, d_loss[0], g_loss[0]))
-            self.losslog.append([d_loss[0], g_loss][0])
+            print("%d [D loss: %f] [G loss: %f]" % (epoch, np.mean(d_loss), np.mean(g_loss)))
+
 
             # If at save interval => save generated image samples
             if epoch % sample_interval == 0:
